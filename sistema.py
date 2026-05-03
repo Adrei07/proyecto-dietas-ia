@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 
+# Clase que guarda y valida los datos principales del usuario
 class PerfilUsuario: 
     def __init__(self, nombre, edad, sexo, peso, altura, nivel_actividad, objetivo, alergias, no_deseados):
         if not isinstance(nombre, str):
@@ -45,10 +46,12 @@ class PerfilUsuario:
         self.alergias = alergias
         self.no_deseados = no_deseados
     
+    # Calcula el índice de masa corporal
     @property
     def imc(self): 
         return self.peso / (self.altura ** 2)
 
+    # Interpreta el IMC del usuario
     def interpretar_imc(self): 
         if self.imc < 18.5: 
             return "bajo"
@@ -59,6 +62,7 @@ class PerfilUsuario:
         else:
             return "obesidad"
   
+    # Muestra los datos del usuario en consola
     def mostrar_perfil(self): 
         print("==== Perfil del Usuario ====\n")
         print(f"Nombre: {self.nombre}")
@@ -74,6 +78,7 @@ class PerfilUsuario:
         print(f"Categoria de IMC: {self.interpretar_imc()}")
 
 
+# Clase para representar un alimento individual
 class Alimento:
     def __init__(self, nombre, cantidad):
         if not isinstance(nombre, str):
@@ -85,6 +90,7 @@ class Alimento:
         self.cantidad = cantidad
 
 
+# Clase para agrupar alimentos dentro de una comida
 class Comida:
     def __init__(self, tipo, alimentos):
         if not isinstance(tipo, str):
@@ -96,6 +102,7 @@ class Comida:
         self.alimentos = alimentos
 
 
+# Clase que representa una dieta completa
 class RegistrarDieta: 
     def __init__(self, nombre_dieta, calorias, proteinas, carbohidratos, grasas, descripcion, comidas=None):
         if not isinstance(nombre_dieta, str):
@@ -129,6 +136,7 @@ class RegistrarDieta:
         self.descripcion = descripcion
         self.comidas = comidas if comidas is not None else []
         
+    # Muestra la dieta en consola
     def mostrar_dieta(self):
         print("\n==== Plan dieta =====\n")
         print(f"Nombre: {self.nombre_dieta}")
@@ -148,11 +156,13 @@ class RegistrarDieta:
             print("\nNo hay comidas detalladas registradas.")
 
 
+# Clase encargada de generar dietas usando API o respaldo local
 class GenerarDieta:
     def __init__(self, api_client=None):
         self.api_client = api_client
 
-    def generar_dieta(self, perfil,dieta_anterior=None, accion=None,ultimo_registro = None):
+    # Intenta generar una dieta con API; si falla, usa dieta local
+    def generar_dieta(self, perfil, dieta_anterior=None, accion=None, ultimo_registro=None):
         if self.api_client is not None:
             try:
                 datos = self.api_client.generar_dieta(perfil, dieta_anterior, accion, ultimo_registro)  
@@ -163,6 +173,7 @@ class GenerarDieta:
 
         return self._generar_dieta_local(perfil)
 
+    # Convierte la respuesta JSON de la API en objetos del sistema
     def _convertir_respuesta_api(self, datos):
         comidas = []
 
@@ -192,6 +203,7 @@ class GenerarDieta:
             comidas=comidas
         )
 
+    # Dieta de respaldo cuando no se usa la API
     def _generar_dieta_local(self, perfil):
         comidas = [
             Comida("Desayuno", [
@@ -220,14 +232,16 @@ class GenerarDieta:
             descripcion="Dieta temporal generada localmente mientras no se usa la API.",
             comidas=comidas
         )
-    
 
+
+# Clase que se comunica con la API para generar dietas personalizadas
 class APIClienteDietas:
     def __init__(self, api_key=None, modelo="gpt-4.1-mini"):
         self.cliente = OpenAI(api_key=api_key)
         self.modelo = modelo
 
-    def generar_dieta(self, perfil, dieta_anterior=None, accion=None,ultimo_registro= None):
+    # Genera una dieta usando el perfil, dieta anterior y progreso del usuario
+    def generar_dieta(self, perfil, dieta_anterior=None, accion=None, ultimo_registro=None):
         info_dieta_anterior = ""
 
         if dieta_anterior is not None:
@@ -242,6 +256,7 @@ class APIClienteDietas:
         
         Acción recomendada por el modelo: {accion}
         """
+
         info_progreso = ""
 
         if ultimo_registro is not None:
@@ -271,7 +286,6 @@ Alimentos no deseados: {perfil.no_deseados}
 {info_dieta_anterior}
 {info_progreso}
 
-
 Devuelve únicamente JSON válido con esta estructura:
 {{
   "nombre_dieta": "string",
@@ -300,7 +314,7 @@ Reglas:
 - Cada comida debe tener mínimo 3 alimentos.
 - No generes dietas extremas ni irreales.
 - Las calorías deben ser coherentes con el peso, altura y nivel de actividad.
-- Ajusta las calorías totales según el objetivo del usuario
+- Ajusta las calorías totales según el objetivo del usuario.
 - Toma en cuenta las observaciones del usuario.
 - Si el usuario dice que es demasiada comida, reduce el volumen de alimentos sin descuidar el objetivo.
 - Si el usuario dice que quedó con hambre, usa alimentos más saciantes.
@@ -317,16 +331,16 @@ Reglas:
         texto = respuesta.output_text.strip()
         texto = re.sub(r"```json\n?", "", texto)
         texto = re.sub(r"```", "", texto).strip()
+
         try:
             return json.loads(texto)
         except json.JSONDecodeError:
             print("Respuesta cruda de la API:")
             print(texto)
             raise ValueError("La API no devolvió JSON válido")
-    
 
 
-
+# Clase que guarda un registro de progreso del usuario
 class RegistrarProgreso: 
     def __init__(self, fecha, peso_actual, cumplimiento, actividad_semana, sintomas, observaciones):
         if not isinstance(fecha, str):
@@ -355,6 +369,7 @@ class RegistrarProgreso:
         self.sintomas = sintomas
         self.observaciones = observaciones
 
+    # Muestra el registro de progreso en consola
     def mostrar_registro(self): 
         print("=== Registro de Progreso ===")
         print(f"Fecha: {self.fecha}")
@@ -365,18 +380,22 @@ class RegistrarProgreso:
         print(f"Observaciones: {self.observaciones}")
 
 
+# Clase que almacena todos los registros de progreso
 class HistorialProgreso: 
     def __init__(self):
         self.registros = []
 
+    # Agrega un nuevo registro al historial
     def agregar_registro(self, registro): 
         self.registros.append(registro)  
         
+    # Devuelve el último registro guardado
     def devolver_ultimo(self):
         if len(self.registros) == 0:
             return None
         return self.registros[-1]
 
+    # Calcula el cambio total de peso desde el primer registro
     def calcular_cambio_peso(self): 
         if len(self.registros) < 2:
             return 0
@@ -384,6 +403,7 @@ class HistorialProgreso:
         peso_inicial = self.registros[0].peso_actual
         return peso_registrado - peso_inicial 
 
+    # Calcula el cambio entre los últimos dos registros
     def cambio_reciente(self): 
         if len(self.registros) < 2:
             return 0
@@ -392,6 +412,7 @@ class HistorialProgreso:
         return peso_registrado - peso_anterior
     
 
+# Clase que interpreta el progreso del usuario
 class AnalizadorProgreso:
     
     def calcular_tendencia(self, historial):
@@ -421,7 +442,7 @@ class AnalizadorProgreso:
         return "Has bajado de peso"
         
 
-
+# Modelo que recomienda si mantener, ajustar o cambiar la dieta
 class ModeloRetroalimentacion:
     def __init__(self):
         self.modelo = DecisionTreeClassifier(random_state=42)
@@ -429,15 +450,16 @@ class ModeloRetroalimentacion:
         self.exactitud = None
         self._entrenar_modelo()
 
+    # Genera datos de entrenamiento para el modelo
     def _generar_dataset(self):
         X = []
         y = []
 
-        cambios = [-1, 0, 1]              # bajó, estancado, subió
+        cambios = [-1, 0, 1]
         cumplimientos = [50, 65, 80, 90, 100]
         actividades = [1, 2, 3]
         sintomas_opciones = [0, 1]
-        objetivos = [-1, 0, 1]            # bajar, mantener, ganar
+        objetivos = [-1, 0, 1]
 
         for objetivo in objetivos:
             for cambio in cambios:
@@ -448,7 +470,7 @@ class ModeloRetroalimentacion:
                             if sintomas == 1:
                                 accion = "cambiar"
 
-                            elif objetivo == 1:  # ganar masa
+                            elif objetivo == 1:
                                 if cambio > 0 and cumplimiento >= 70:
                                     accion = "mantener"
                                 elif cambio == 0:
@@ -458,7 +480,7 @@ class ModeloRetroalimentacion:
                                 else:
                                     accion = "ajustar"
 
-                            elif objetivo == -1:  # bajar peso
+                            elif objetivo == -1:
                                 if cambio < 0 and cumplimiento >= 70:
                                     accion = "mantener"
                                 elif cambio == 0:
@@ -468,7 +490,7 @@ class ModeloRetroalimentacion:
                                 else:
                                     accion = "ajustar"
 
-                            else:  # mantener peso
+                            else:
                                 if cambio == 0:
                                     accion = "mantener"
                                 elif abs(cambio) == 1 and cumplimiento >= 80:
@@ -488,6 +510,7 @@ class ModeloRetroalimentacion:
 
         return X, y
 
+    # Entrena el modelo con los datos generados
     def _entrenar_modelo(self):
         X, y = self._generar_dataset()
 
@@ -506,6 +529,7 @@ class ModeloRetroalimentacion:
 
         self.entrenado = True
 
+    # Convierte los datos reales del usuario en datos numéricos para el modelo
     def _procesar_datos(self, usuario, historial):
         if len(historial.registros) == 1:
             cambio = historial.devolver_ultimo().peso_actual - usuario.peso
@@ -542,6 +566,7 @@ class ModeloRetroalimentacion:
             objetivo
         ]]
 
+    # Devuelve la acción recomendada por el modelo
     def recomendar_accion(self, usuario, historial):
         if len(historial.registros) == 0:
             return "sin_datos"
@@ -561,7 +586,7 @@ class ModeloRetroalimentacion:
         return f"Exactitud del modelo: {round(self.exactitud * 100, 2)}%"
 
 
-
+# Clase principal que conecta todo el sistema
 class SistemaNutricional: 
     def __init__(self, api_client=None):
         self.usuario = None
@@ -571,11 +596,13 @@ class SistemaNutricional:
         self.analizador = AnalizadorProgreso()
         self.modelo_retroalimentacion = ModeloRetroalimentacion()
         
+    # Asigna un usuario al sistema
     def asignar_usuario(self, usuario):
         if not isinstance(usuario, PerfilUsuario):
             raise TypeError("Debe ser un objeto PerfilUsuario")
         self.usuario = usuario
         
+    # Genera la primera dieta del usuario
     def generar_dieta_inicial(self):
         if self.usuario is None:
             raise ValueError("Primero debes asignar un usuario")
@@ -583,11 +610,13 @@ class SistemaNutricional:
         self.dieta_actual = self.generador_dieta.generar_dieta(self.usuario)
         return self.dieta_actual
 
+    # Registra un nuevo progreso en el historial
     def registrar_progreso(self, registro):
         if not isinstance(registro, RegistrarProgreso):
             raise TypeError("Debe ser un objeto RegistrarProgreso")
         self.historial.agregar_registro(registro)
 
+    # Analiza si el usuario subió, bajó o mantuvo peso
     def analizar_usuario(self):
         if len(self.historial.registros) == 0:
             return "No hay registros de progreso"
@@ -606,6 +635,7 @@ class SistemaNutricional:
         else:
             return "Te mantuviste en el mismo peso"
 
+    # Obtiene la acción recomendada por el modelo
     def obtener_accion_recomendada(self):   
         if self.usuario is None:
             raise ValueError("No hay usuario asignado")
@@ -615,6 +645,7 @@ class SistemaNutricional:
             self.historial
         )
 
+    # Actualiza la dieta usando el último progreso del usuario
     def actualizar_dieta(self):
         if self.usuario is None:
             raise ValueError("No hay usuario asignado")
@@ -631,6 +662,7 @@ class SistemaNutricional:
     
         return self.dieta_actual
 
+    # Decide si mantener, ajustar o cambiar la dieta
     def evaluar_y_actualizar_dieta(self):
         accion = self.obtener_accion_recomendada()
         ultimo_registro = self.historial.devolver_ultimo()
@@ -660,6 +692,7 @@ class SistemaNutricional:
 
         return "No se pudo determinar una acción"
 
+    # Muestra un resumen completo en consola
     def mostrar_resumen(self):
         print("\n===== RESUMEN DEL SISTEMA =====\n")
     
@@ -684,4 +717,3 @@ class SistemaNutricional:
     
         print("\n=== ACCIÓN RECOMENDADA ===")
         print(self.obtener_accion_recomendada())
-    
