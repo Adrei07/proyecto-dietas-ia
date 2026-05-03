@@ -1,3 +1,4 @@
+import os
 import customtkinter as ctk
 from sistema import (
     SistemaNutricional,
@@ -9,8 +10,7 @@ from sistema import (
 #Configuracion
 
 USAR_API = False
-
-API_KEY = "API KEY"
+API_KEY = os.getenv("OPENAI_API_KEY")
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
 
